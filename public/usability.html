@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Usabilidad - Calendario</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://kit.fontawesome.com/2f6e11ae93.js" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <style>
+        .calendar-container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #eef2f6;
+        }
+
+        .fc-toolbar-title { font-size: 1.5em !important; color: var(--primary-blue); }
+        .fc-button-primary { 
+            background-color: var(--primary-blue) !important; 
+            border-color: var(--primary-blue) !important; 
+            text-transform: capitalize;
+        }
+        .fc-button-primary:hover { background-color: #283593 !important; }
+        .fc-daygrid-day-number { color: #555; text-decoration: none; }
+        .fc-col-header-cell-cushion { color: #333; text-decoration: none; }
+        
+        .page-header {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-header h2 { color: var(--primary-blue); margin: 0; }
+        .page-header p { color: #666; margin: 5px 0 0 0; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="header-left">
+            <h3>Sistema de Gestión</h3>
+            <div class="user-badge">
+                <i class="fa-solid fa-user"></i>
+                <span id="welcome-name">...</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="notification-wrapper" onclick="toggleNotifs()">
+                <span class="bell-icon"><i class="fa-solid fa-bell"></i></span>
+                <span id="notif-badge" class="badge">0</span>
+                <div id="notif-list" class="notif-dropdown">
+                    <div style="padding:15px; font-weight:bold; border-bottom:1px solid #eee;">Notificaciones</div>
+                    <div id="notif-items"></div>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:white; cursor:pointer;">
+                Salir <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <a href="perfil.html" class="menu-item">Mi perfil</a>
+            <a href="panel.html" class="menu-item">Panel general</a>
+            <a href="miscasos.html" class="menu-item">Mis casos</a>
+            <a href="asignaciones.html" class="menu-item">Asignaciones</a>
+            <div class="menu-item active">Usabilidad</div>
+        </div>
+
+        <div class="main-content">
+            <div class="calendar-container">
+                <div class="page-header">
+                    <div>
+                        <h2><i class="fa-regular fa-calendar-days"></i> Calendario de Casos</h2>
+                        <p>Visualiza las fechas de entrega y eventos programados.</p>
+                    </div>
+                </div>
+                
+                <div id='calendar'></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = 'index.html';
+        document.getElementById('welcome-name').innerText = user.name;
+        
+        // notis
+        const socket = io(); 
+        socket.emit('login_user', user.id);
+        socket.on('notification_received', n => { addNotif(n, true); updateBadge(1); });
+        fetch(`/api/notifications/${user.id}`).then(r=>r.json()).then(d=>{ 
+            if(d.filter(n=>n.is_read===0).length) updateBadge(d.filter(n=>n.is_read===0).length, true); 
+            d.forEach(n=>addNotif(n)); 
+        });
+
+        function addNotif(n,p=false){ 
+            const b=document.getElementById('notif-items'); 
+            if(b.innerText.includes('Notificaciones'))/*header*/; else if(b.innerHTML.length < 50) b.innerHTML='';
+            const h=`<div class="notif-item ${n.is_read===0?'unread':''}">${n.message}<br><small style="color:#888">${n.timestamp}</small></div>`; 
+            if(p)b.insertAdjacentHTML('afterbegin',h); else b.insertAdjacentHTML('beforeend',h); 
+        }
+        function updateBadge(n,s=false){ 
+            const b=document.getElementById('notif-badge'); 
+            let v=s?n:parseInt(b.innerText)+n; 
+            b.innerText=v; b.style.display=v>0?'block':'none'; 
+        }
+        function toggleNotifs(){ 
+            const l=document.getElementById('notif-list'); 
+            l.style.display=l.style.display==='block'?'none':'block'; 
+            if(l.style.display==='block'){ fetch('/api/notifications/mark-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:user.id})}); updateBadge(0,true); }
+        }
+        function logout(){ localStorage.removeItem('user'); window.location.href='index.html'; }
+
+        //calendario
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                },
+                buttonText: {
+                    today:    'Hoy',
+                    month:    'Mes',
+                    week:     'Semana',
+                    day:      'Día',
+                    list:     'Lista'
+                },
+                events: async function(info, successCallback, failureCallback) {
+                    const res = await fetch('/api/my-cases', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ userId: user.id, role: user.role })
+                    });
+                    const cases = await res.json();
+                    
+                    const events = cases.map(c => {
+                        return {
+                            title: c.title,
+                            start: c.event_date || new Date(),
+                            url: `caso.html?id=${c.id}`,
+                            color: '#1a237e',
+                            textColor: 'white'
+                        };
+                    });
+                    
+                    successCallback(events);
+                },
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    if (info.event.url) {
+                        window.location.href = info.event.url;
+                    }
+                }
+            });
+            calendar.render();
+        });
+    </script>
+</body>
+</html>

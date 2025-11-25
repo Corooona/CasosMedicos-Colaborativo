@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel General</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://kit.fontawesome.com/2f6e11ae93.js" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* estilos del dashbiard */
+        
+        .dashboard-header {
+            margin-bottom: 30px;
+        }
+        .dashboard-header h2 {
+            font-size: 1.8em;
+            color: var(--primary-blue);
+            margin-bottom: 5px;
+        }
+        .dashboard-header p { color: #666; }
+
+        /* grid de las tarjetas de recordatorio */
+        .reminders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        /* Tarjeta de Recordatorio */
+        .reminder-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #f0f0f0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 180px;
+        }
+
+        .reminder-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        /* Indicador de estado */
+        .reminder-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 6px;
+        }
+
+        /* Variantes de color */
+        .card-expired::before { background: #f44336; } 
+        .card-urgent::before { background: #ff9800; } 
+        .card-normal::before { background: #4caf50; } 
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .card-icon {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em;
+        }
+        .icon-expired { background: #ffebee; color: #f44336; }
+        .icon-urgent { background: #fff3e0; color: #ff9800; }
+        .icon-normal { background: #e8f5e9; color: #4caf50; }
+
+        .card-content h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .card-content p {
+            font-size: 0.9em;
+            color: #777;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #f5f5f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .date-badge {
+            background: #f5f7fa;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #555;
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        .days-left {
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+        .text-expired { color: #f44336; }
+        .text-urgent { color: #ff9800; }
+        .text-normal { color: #4caf50; }
+
+        
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 16px;
+            border: 2px dashed #e0e0e0;
+        }
+        .empty-state i { font-size: 4em; color: #ddd; margin-bottom: 20px; }
+        .empty-state h3 { color: #555; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="header-left">
+            <h3>Sistema de Gestión</h3>
+            <div class="user-badge">
+                <i class="fa-solid fa-user"></i>
+                <span id="welcome-name">...</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="notification-wrapper" onclick="toggleNotifs()">
+                <span class="bell-icon"><i class="fa-solid fa-bell"></i></span>
+                <span id="notif-badge" class="badge">0</span>
+                <div id="notif-list" class="notif-dropdown">
+                    <div style="padding:15px; font-weight:bold; border-bottom:1px solid #eee;">Notificaciones</div>
+                    <div id="notif-items"></div>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:white; cursor:pointer;">
+                Salir <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <a href="perfil.html" class="menu-item">Mi perfil</a>
+            <a href="panel.html" class="menu-item active">Panel general</a>
+            <a href="miscasos.html" class="menu-item">Mis casos</a>
+            <a href="asignaciones.html" class="menu-item">Asignaciones</a>
+            <a href="usability.html" class="menu-item">Usabilidad</a>
+        </div>
+
+        <div class="main-content">
+            <div class="dashboard-header">
+                <h2 id="greeting">Hola, Usuario</h2>
+                <p>Aquí tienes el resumen de tus próximas entregas y eventos clínicos.</p>
+            </div>
+
+            <div id="reminders-list" class="reminders-grid">
+                <p style="text-align:center; width:100%;">Cargando agenda...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = 'index.html';
+        
+        document.getElementById('welcome-name').innerText = user.name;
+        document.getElementById('greeting').innerText = `Hola, ${user.name.split(' ')[0]}`;
+
+        // notis estandard
+        const socket = io();
+        socket.emit('login_user', user.id);
+        socket.on('notification_received', n => { addNotif(n, true); updateBadge(1); });
+        fetch(`/api/notifications/${user.id}`).then(r=>r.json()).then(d=>{
+            if(d.filter(n=>n.is_read===0).length) updateBadge(d.filter(n=>n.is_read===0).length, true);
+            d.forEach(n=>addNotif(n));
+        });
+
+        function addNotif(n,p=false){ 
+            const b=document.getElementById('notif-items'); 
+            if(b.innerText.includes('Notificaciones')) /*header*/; else if(b.innerHTML.length < 50) b.innerHTML='';
+            const h=`<div class="notif-item ${n.is_read===0?'unread':''}">${n.message}<br><small style="color:#888">${n.timestamp}</small></div>`; 
+            if(p)b.insertAdjacentHTML('afterbegin',h); else b.insertAdjacentHTML('beforeend',h); 
+        }
+        function updateBadge(n,s=false){ const b=document.getElementById('notif-badge'); let v=s?n:parseInt(b.innerText)+n; b.innerText=v; b.style.display=v>0?'block':'none'; }
+        function toggleNotifs(){ const l=document.getElementById('notif-list'); l.style.display=l.style.display==='block'?'none':'block'; if(l.style.display==='block'){ fetch('/api/notifications/mark-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:user.id})}); updateBadge(0,true); } }
+        function logout(){ localStorage.removeItem('user'); window.location.href='index.html'; }
+
+        // loguca del dashboard
+        fetch('/api/my-cases', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ userId: user.id, role: user.role })
+        })
+        .then(r => r.json())
+        .then(cases => {
+            const list = document.getElementById('reminders-list');
+            list.innerHTML = '';
+
+            // Filtrar solo los que tienen fecha
+            const events = cases.filter(c => c.event_date);
+            
+            // Ordenar por fecha
+            events.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+
+            if (events.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <h3>¡Todo al día!</h3>
+                        <p>No tienes recordatorios ni entregas pendientes por ahora.</p>
+                    </div>`;
+                return;
+            }
+
+            events.forEach(c => {
+                const date = new Date(c.event_date);
+                const today = new Date();
+                const diffTime = date - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+                // Determinar estado, color e icono
+                let statusClass = 'card-normal';
+                let iconClass = 'icon-normal';
+                let textClass = 'text-normal';
+                let icon = 'fa-calendar-day';
+                let statusText = `Faltan ${diffDays} días`;
+
+                if (diffDays < 0) {
+                    statusClass = 'card-expired';
+                    iconClass = 'icon-expired';
+                    textClass = 'text-expired';
+                    icon = 'fa-triangle-exclamation';
+                    statusText = 'Vencido / Finalizado';
+                } else if (diffDays === 0) {
+                    statusClass = 'card-expired';
+                    iconClass = 'icon-expired';
+                    textClass = 'text-expired';
+                    icon = 'fa-bell';
+                    statusText = '¡Es Hoy!';
+                } else if (diffDays <= 5) {
+                    statusClass = 'card-urgent';
+                    iconClass = 'icon-urgent';
+                    textClass = 'text-urgent';
+                    icon = 'fa-clock';
+                }
+
+                // Formarto de fehca lindo
+                const dateString = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+
+                list.innerHTML += `
+                    <div class="reminder-card ${statusClass}" onclick="window.location.href='caso.html?id=${c.id}'" style="cursor:pointer;">
+                        <div class="card-header">
+                            <div class="card-icon ${iconClass}">
+                                <i class="fa-solid ${icon}"></i>
+                            </div>
+                            <div class="days-left ${textClass}">${statusText}</div>
+                        </div>
+                        
+                        <div class="card-content">
+                            <h3>${c.title}</h3>
+                            <p>${c.description || 'Sin descripción disponible.'}</p>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="date-badge">
+                                <i class="fa-regular fa-calendar"></i> ${dateString}
+                            </div>
+                            <i class="fa-solid fa-chevron-right" style="color:#ccc;"></i>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    </script>
+</body>
+</html>

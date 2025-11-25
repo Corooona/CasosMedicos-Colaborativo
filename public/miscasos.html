@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Casos</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://kit.fontawesome.com/2f6e11ae93.js" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        
+        /* Tarjeta de Caso Mejorada */
+        .case-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px;
+            border-left: 6px solid var(--accent-blue); /* Borde lateral de acento */
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .case-icon {
+            font-size: 2.5em;
+            color: var(--primary-blue);
+            margin-right: 20px;
+            opacity: 0.8;
+        }
+
+        .case-details h4 {
+            margin: 0 0 5px 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .case-details p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95em;
+            max-width: 500px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .code-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 8px;
+            border: 1px solid #bbdefb;
+        }
+
+        /* Botón de Acción Principal  */
+        .action-btn-large {
+            padding: 12px 25px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        /* Modales */
+        .modal { backdrop-filter: blur(5px); }
+        .modal-content { 
+            border-radius: 16px; 
+            padding: 35px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2); 
+            border-top: 5px solid var(--primary-blue);
+        }
+        
+        .modal h3 {
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: #555; }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+        .empty-state i { font-size: 4em; margin-bottom: 15px; color: #ddd; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="header-left">
+            <h3>Sistema de Gestión</h3>
+            <div class="user-badge">
+                <i class="fa-solid fa-user"></i>
+                <span id="welcome-name">...</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="notification-wrapper" onclick="toggleNotifs()">
+                <span class="bell-icon"><i class="fa-solid fa-bell"></i></span>
+                <span id="notif-badge" class="badge">0</span>
+                <div id="notif-list" class="notif-dropdown">
+                    <div style="padding:15px; font-weight:bold; border-bottom:1px solid #eee;">Notificaciones</div>
+                    <div id="notif-items"></div>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:white; cursor:pointer;">
+                Salir <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <a href="perfil.html" class="menu-item">Mi perfil</a>
+            <a href="panel.html" class="menu-item">Panel general</a>
+            <a href="miscasos.html" class="menu-item active">Mis casos</a>
+            <a href="asignaciones.html" class="menu-item">Asignaciones</a>
+            <a href="usability.html" class="menu-item">Usabilidad</a>
+        </div>
+
+        <div class="main-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <h2 style="margin:0;">Gestión de Casos</h2>
+                <div id="action-area"></div>
+            </div>
+
+            <div id="cases-list">
+                <p style="text-align:center; color:#888;">Cargando casos...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-create" class="modal">
+        <div class="modal-content">
+            <h3><i class="fa-solid fa-folder-plus"></i> Crear Nuevo Caso</h3>
+            
+            <div class="form-group">
+                <label>Título del Caso</label>
+                <input type="text" id="c-title" placeholder="Ej: Paciente con dolor abdominal">
+            </div>
+
+            <div style="display:flex; gap:15px;">
+                <div class="form-group" style="flex:1;">
+                    <label>Edad</label>
+                    <input type="text" id="c-age" placeholder="Ej: 45 años">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label>Sexo</label>
+                    <select id="c-gender">
+                        <option value="Femenino">Femenino</option>
+                        <option value="Masculino">Masculino</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Fecha Límite / Evento</label>
+                <input type="date" id="c-date">
+            </div>
+
+            <div class="form-group">
+                <label>Descripción Clínica</label>
+                <textarea id="c-desc" rows="3" placeholder="Describe el escenario clínico..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Archivo Inicial (PDF)</label>
+                <input type="file" id="c-pdf">
+            </div>
+
+            <div style="margin-top:25px; text-align:right;">
+                <button onclick="closeModal('modal-create')" style="background:transparent; color:#666; border:none; cursor:pointer; margin-right:15px;">Cancelar</button>
+                <button class="btn-primary" onclick="submitCreate()">Crear Caso</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-join" class="modal">
+        <div class="modal-content" style="width:400px;">
+            <h3><i class="fa-solid fa-users-viewfinder"></i> Unirse a un Caso</h3>
+            <p style="color:#666; margin-bottom:20px;">Ingresa el código único proporcionado por tu instructor.</p>
+            
+            <div class="form-group">
+                <label>Código de Acceso</label>
+                <input type="text" id="join-code" placeholder="Ej: A7X92B" style="text-transform:uppercase; letter-spacing:2px; text-align:center; font-size:1.2em;">
+            </div>
+
+            <div style="margin-top:25px; text-align:right;">
+                <button onclick="closeModal('modal-join')" style="background:transparent; color:#666; border:none; cursor:pointer; margin-right:15px;">Cancelar</button>
+                <button class="btn-primary" onclick="submitJoin()">Unirse</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = 'index.html';
+        document.getElementById('welcome-name').innerText = user.name;
+        
+        const socket = io();
+        socket.emit('login_user', user.id);
+
+        // --- NOTIFICACIONES (Lógica Estándar) ---
+        socket.on('notification_received', n => { addNotif(n, true); updateBadge(1); });
+        fetch(`/api/notifications/${user.id}`).then(r=>r.json()).then(d=>{ 
+            if(d.filter(n=>n.is_read===0).length) updateBadge(d.filter(n=>n.is_read===0).length, true);
+            d.forEach(n=>addNotif(n));
+        });
+
+        function addNotif(n, p=false){ 
+            const b=document.getElementById('notif-items'); 
+            const h=`<div class="notif-item ${n.is_read===0?'unread':''}">${n.message}<br><small style="color:#888">${n.timestamp}</small></div>`; 
+            if(p)b.insertAdjacentHTML('afterbegin',h); else b.insertAdjacentHTML('beforeend',h); 
+        }
+        function updateBadge(n, s=false){ 
+            const b=document.getElementById('notif-badge'); 
+            let v=s?n:parseInt(b.innerText)+n; 
+            b.innerText=v; b.style.display=v>0?'block':'none'; 
+        }
+        function toggleNotifs(){ 
+            const l=document.getElementById('notif-list'); 
+            l.style.display=l.style.display==='block'?'none':'block'; 
+            if(l.style.display==='block'){ fetch('/api/notifications/mark-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:user.id})}); updateBadge(0,true); }
+        }
+        function logout(){ localStorage.removeItem('user'); window.location.href='index.html'; }
+
+        // LOGICA DE CASOS 
+        
+        // Renderizar botón principal según rol
+        if(user.role === 'instructor') {
+            document.getElementById('action-area').innerHTML = `
+                <button class="btn-primary action-btn-large" onclick="openModal('modal-create')">
+                    <i class="fa-solid fa-plus"></i> Nuevo Caso
+                </button>`;
+        } else {
+            document.getElementById('action-area').innerHTML = `
+                <button class="btn-primary action-btn-large" onclick="openModal('modal-join')">
+                    <i class="fa-solid fa-key"></i> Unirse con Código
+                </button>`;
+        }
+
+        loadCases();
+
+        async function loadCases() {
+            const res = await fetch('/api/my-cases', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: user.id, role: user.role })
+            });
+            const cases = await res.json();
+            const list = document.getElementById('cases-list');
+            list.innerHTML = '';
+
+            if(cases.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <h3>No tienes casos activos</h3>
+                        <p>Crea uno nuevo o únete a uno existente para comenzar.</p>
+                    </div>`;
+                return;
+            }
+
+            cases.forEach(c => {
+                // Si soy instructor puedo verr el código
+                const codeHtml = user.role === 'instructor' 
+                    ? `<div class="code-badge"><i class="fa-solid fa-barcode"></i> CÓDIGO: ${c.code}</div>` 
+                    : '';
+
+                list.innerHTML += `
+                    <div class="case-card">
+                        <div style="display:flex; align-items:center;">
+                            <div class="case-icon">
+                                <i class="fa-solid fa-folder-open"></i>
+                            </div>
+                            <div class="case-details">
+                                <h4>${c.title}</h4>
+                                <p>${c.description || 'Sin descripción disponible'}</p>
+                                ${codeHtml}
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="window.location.href='caso.html?id=${c.id}'">
+                            Entrar <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function openModal(id){ document.getElementById(id).style.display='flex'; }
+        function closeModal(id){ document.getElementById(id).style.display='none'; }
+
+        async function submitCreate() {
+            // Validación simple
+            const title = document.getElementById('c-title').value;
+            if(!title) return alert("El título es obligatorio");
+
+            const fd = new FormData();
+            fd.append('title', title);
+            fd.append('age', document.getElementById('c-age').value);
+            fd.append('gender', document.getElementById('c-gender').value);
+            fd.append('eventDate', document.getElementById('c-date').value);
+            fd.append('description', document.getElementById('c-desc').value);
+            fd.append('instructorId', user.id);
+            
+            const file = document.getElementById('c-pdf').files[0];
+            if(file) fd.append('pdf', file);
+            
+            const res = await fetch('/api/create-case', { method: 'POST', body: fd });
+            const data = await res.json();
+            
+            if(data.success) { 
+                alert(`Caso creado con éxito.\nCÓDIGO DE ACCESO: ${data.code}`); 
+                closeModal('modal-create'); 
+                loadCases(); 
+            } else {
+                alert("Error al crear caso");
+            }
+        }
+
+        async function submitJoin() {
+            const code = document.getElementById('join-code').value.toUpperCase();
+            if(!code) return alert("Ingresa un código");
+
+            const res = await fetch('/api/join-case', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ code, userId: user.id }) 
+            });
+            const data = await res.json();
+            
+            if(data.success) { 
+                alert('¡Te has unido al caso correctamente!'); 
+                closeModal('modal-join'); 
+                loadCases(); 
+            } else { 
+                alert(data.message); 
+            }
+        }
+    </script>
+</body>
+</html>

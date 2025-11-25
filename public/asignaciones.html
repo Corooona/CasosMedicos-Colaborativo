@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Asignaciones</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://kit.fontawesome.com/2f6e11ae93.js" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA CALIFICACIONES */
+        .grade-card { 
+            border-left: 5px solid #2196F3; 
+            background: white; 
+            padding: 25px; 
+            margin-bottom: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .student-list {
+            margin-top: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+        }
+
+        .student-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px 20px; 
+            border-bottom: 1px solid #eee; 
+            transition: background 0.2s;
+        }
+
+        .student-item:last-child { border-bottom: none; }
+        .student-item:hover { background: #fff; }
+
+        .student-name {
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ESTILO DEL INPUT CORREGIDO */
+        .grade-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grade-input { 
+            width: 80px; 
+            padding: 8px 12px; 
+            text-align: center; 
+            font-size: 1.1em; 
+            font-weight: bold;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            color: #1a237e;
+        }
+
+        .grade-input:focus {
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+            outline: none;
+        }
+
+        .btn-save-grade {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-save-grade:hover { background: #43a047; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="header-left">
+            <h3>Sistema de Gestión</h3>
+            <div class="user-badge">
+                <i class="fa-solid fa-user"></i>
+                <span id="welcome-name">...</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="notification-wrapper" onclick="toggleNotifs()">
+                <span class="bell-icon"><i class="fa-solid fa-bell"></i></span>
+                <span id="notif-badge" class="badge">0</span>
+                <div id="notif-list" class="notif-dropdown">
+                    <div style="padding:15px; background:#f9f9f9; border-bottom:1px solid #eee; font-weight:bold;">Notificaciones</div>
+                    <div id="notif-items"></div>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:white; cursor:pointer;">
+                Salir <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <a href="perfil.html" class="menu-item">Mi perfil</a>
+            <a href="panel.html" class="menu-item">Panel general</a>
+            <a href="miscasos.html" class="menu-item">Mis casos</a>
+            <a href="asignaciones.html" class="menu-item active">Asignaciones</a>
+            <a href="usability.html" class="menu-item">Usabilidad</a>
+        </div>
+        <div class="main-content">
+            <h2 id="page-title">Calificaciones</h2>
+            <div id="grades-container" style="margin-top: 20px;">
+                <p>Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user')); 
+        if(!user) window.location.href='index.html';
+        document.getElementById('welcome-name').innerText = user.name;
+        
+        // Notificaciones
+        const socket = io(); socket.emit('login_user', user.id);
+        socket.on('notification_received', n => { addNotif(n, true); updateBadge(1); });
+        fetch(`/api/notifications/${user.id}`).then(r=>r.json()).then(d=>{ 
+            if(d.filter(n=>n.is_read===0).length) updateBadge(d.filter(n=>n.is_read===0).length, true); 
+            if(d.length === 0) document.getElementById('notif-items').innerHTML = '<div style="padding:15px; text-align:center; color:#999;">Sin notificaciones</div>';
+            else d.forEach(n=>addNotif(n)); 
+        });
+
+        function addNotif(n,p=false){ 
+            const b=document.getElementById('notif-items'); 
+            if(b.innerText.includes('Sin notificaciones')) b.innerHTML='';
+            const h=`<div class="notif-item ${n.is_read===0?'unread':''}">${n.message}<br><small style="color:#888">${n.timestamp}</small></div>`; 
+            if(p)b.insertAdjacentHTML('afterbegin',h); else b.insertAdjacentHTML('beforeend',h); 
+        }
+        
+        function updateBadge(n,s=false){ 
+            const b=document.getElementById('notif-badge'); 
+            let v=s?n:parseInt(b.innerText)+n; 
+            b.innerText=v; b.style.display=v>0?'block':'none'; 
+        }
+        
+        function toggleNotifs(){ 
+            const l=document.getElementById('notif-list'); 
+            l.style.display=l.style.display==='block'?'none':'block'; 
+            if(l.style.display==='block'){ 
+                fetch('/api/notifications/mark-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:user.id})}); 
+                updateBadge(0,true); 
+            }
+        }
+        
+        function logout(){ localStorage.removeItem('user'); window.location.href='index.html'; }
+
+        // --- LÓGICA CALIFICACIONES ---
+        if(user.role==='instructor') loadInstructor(); else loadStudent();
+
+        async function loadStudent(){
+            document.getElementById('page-title').innerText = "Mis Calificaciones";
+            const res = await fetch('/api/my-cases', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id, role:user.role})});
+            const cases = await res.json();
+            const c = document.getElementById('grades-container'); c.innerHTML='';
+            
+            if(cases.length === 0) { c.innerHTML = '<p>No tienes casos asignados.</p>'; return; }
+
+            cases.forEach(ca=>{
+                c.innerHTML += `
+                    <div class="grade-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3>${ca.title}</h3>
+                            <div style="text-align:right;">
+                                <span style="font-size: 2.5em; font-weight:bold; color:${ca.grade>=60?'#4CAF50':'#F44336'}">${ca.grade}</span>
+                                <span style="color:#888; font-size:1.2em;">/100</span>
+                                <br><small style="color:#666">Calificación Final</small>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function loadInstructor(){
+            document.getElementById('page-title').innerText = "Calificar Estudiantes";
+            const res = await fetch('/api/my-cases', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:user.id, role:user.role})});
+            const cases = await res.json();
+            const c = document.getElementById('grades-container'); c.innerHTML='';
+            
+            if(cases.length === 0) { c.innerHTML = '<p>No has creado casos.</p>'; return; }
+
+            for(const ca of cases){
+                const studs = await (await fetch(`/api/case-students/${ca.id}`)).json();
+                let html = '';
+                
+                if(studs.length === 0) {
+                    html = '<div style="padding:15px; text-align:center; color:#888; font-style:italic;">Aún no hay alumnos inscritos en este caso.</div>';
+                } else {
+                    studs.forEach(s => {
+                        html += `
+                            <div class="student-item">
+                                <div class="student-name">
+                                    <i class="fa-solid fa-user-graduate" style="color:#2196F3"></i> 
+                                    ${s.name}
+                                </div>
+                                <div class="grade-controls">
+                                    <input type="number" class="grade-input" id="g-${ca.id}-${s.id}" value="${s.grade}" min="0" max="100">
+                                    <button class="btn-save-grade" onclick="save(${ca.id},${s.id})">
+                                        <i class="fa-solid fa-check"></i> Guardar
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                c.innerHTML += `
+                    <div class="grade-card">
+                        <h3 style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:0;">
+                            <i class="fa-solid fa-folder-open" style="color:#1a237e; margin-right:10px;"></i> ${ca.title}
+                        </h3>
+                        <div class="student-list">
+                            ${html}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        async function save(cid, sid){
+            const grade = document.getElementById(`g-${cid}-${sid}`).value;
+            const res = await fetch('/api/update-grade', {
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({caseId:cid, studentId:sid, grade:grade})
+            });
+            const data = await res.json();
+            if(data.success) alert('Calificación guardada correctamente');
+            else alert('Error al guardar');
+        }
+    </script>
+</body>
+</html>

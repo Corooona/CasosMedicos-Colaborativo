@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Plataforma Médica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/2f6e11ae93.js" crossorigin="anonymous"></script>
+    
+    <style>
+        :root {
+            --primary: #1a237e;
+            --accent: #2196F3;
+            --white: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Elementos decorativos de fondo */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            z-index: 0;
+        }
+        .c1 { width: 300px; height: 300px; top: -50px; left: -50px; animation: float 6s infinite ease-in-out; }
+        .c2 { width: 200px; height: 200px; bottom: -30px; right: -30px; animation: float 8s infinite ease-in-out reverse; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Tarjeta de Login */
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            width: 400px;
+            text-align: center;
+            z-index: 1;
+            animation: slideUp 0.8s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header { margin-bottom: 30px; }
+        .login-header i { font-size: 3em; color: var(--primary); margin-bottom: 10px; }
+        .login-header h2 { color: #333; font-weight: 600; }
+        .login-header p { color: #777; font-size: 0.9em; }
+
+        /* Inputs con Iconos */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px 12px 45px; /* Espacio para el icono */
+            border: 2px solid #eee;
+            border-radius: 10px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            background: #f9f9f9;
+        }
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--accent);
+            background: #fff;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.1);
+        }
+
+        /* Botones */
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            color: white;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4); }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            margin-top: 15px;
+        }
+        .btn-outline:hover { background: #e3f2fd; }
+
+        .divider {
+            margin: 20px 0;
+            color: #aaa;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+        }
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #eee;
+        }
+        .divider::before { margin-right: 10px; }
+        .divider::after { margin-left: 10px; }
+
+        .demo-text {
+            margin-top: 20px;
+            font-size: 0.75em;
+            color: #888;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Modal (Estilo mejorado) */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: zoomIn 0.3s;
+        }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="circle c1"></div>
+    <div class="circle c2"></div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fa-solid fa-heart-pulse"></i>
+            <h2>Bienvenido</h2>
+            <p>Plataforma Colaborativa Médica</p>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-envelope"></i>
+            <input type="email" id="email" placeholder="Correo institucional">
+        </div>
+        
+        <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="password" placeholder="Contraseña">
+        </div>
+
+        <button class="btn btn-primary" onclick="login()">
+            INICIAR SESIÓN <i class="fa-solid fa-arrow-right" style="margin-left:5px;"></i>
+        </button>
+
+        <div class="divider">¿No tienes cuenta?</div>
+
+        <button class="btn btn-outline" onclick="document.getElementById('modal-register').style.display='flex'">
+            REGISTRARME
+        </button>
+
+        <div class="demo-text">
+            <i class="fa-solid fa-circle-info"></i> <strong>Demo:</strong><br>
+            Profe: prof@test.com / 123<br>
+            Alumno: alumno@test.com / 123
+        </div>
+    </div>
+
+    <div id="modal-register" class="modal">
+        <div class="modal-content">
+            <div style="text-align:center; margin-bottom:20px;">
+                <h3 style="color:var(--primary)">Crear Cuenta</h3>
+                <p style="font-size:0.8em; color:#666;">Únete a la plataforma</p>
+            </div>
+
+            <div class="input-group">
+                <i class="fa-solid fa-user"></i>
+                <input type="text" id="r-name" placeholder="Nombre Completo">
+            </div>
+            
+            <div class="input-group">
+                <i class="fa-solid fa-at"></i>
+                <input type="email" id="r-email" placeholder="Correo Electrónico">
+            </div>
+            
+            <div class="input-group">
+                <i class="fa-solid fa-key"></i>
+                <input type="password" id="r-pass" placeholder="Contraseña">
+            </div>
+            
+            <div class="input-group">
+                <i class="fa-solid fa-user-graduate"></i>
+                <select id="r-role">
+                    <option value="estudiante">Soy Estudiante</option>
+                    <option value="instructor">Soy Instructor</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-outline" style="margin:0; border:none; color:#666;" onclick="document.getElementById('modal-register').style.display='none'">Cancelar</button>
+                <button class="btn btn-primary" style="width:auto; padding:10px 20px;" onclick="register()">Registrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // validación visual
+            if(!email || !password) {
+                alert("Por favor, ingresa tus credenciales.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn-primary');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Cargando...';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'perfil.html';
+                } else {
+                    alert(data.message);
+                    btn.innerHTML = originalText;
+                }
+            } catch (e) {
+                alert("Error de conexión");
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function register() {
+            const name=document.getElementById('r-name').value;
+            const email=document.getElementById('r-email').value;
+            const password=document.getElementById('r-pass').value;
+            const role=document.getElementById('r-role').value;
+
+            if(!name || !email || !password) return alert("Completa todos los campos");
+
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, role })
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert("¡Registro exitoso! Ahora inicia sesión.");
+                document.getElementById('modal-register').style.display='none';
+            } else {
+                alert("Error: " + data.message);
+            }
+        }
+        
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-register');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

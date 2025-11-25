@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Perfil</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://kit.fontawesome.com/2f6e11ae93.js" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        
+        .profile-container {
+            background: white;
+            padding: 0;
+            border-radius: 16px;
+            max-width: 950px;
+            margin: 20px auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #eef2f6;
+        }
+
+        .profile-header {
+            text-align: center;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            padding: 40px 20px;
+            color: white;
+            position: relative;
+        }
+
+        .profile-header h2 {
+            margin: 0;
+            font-weight: 300;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+        }
+
+        .profile-body {
+            display: flex;
+            padding: 40px;
+            gap: 50px;
+        }
+
+        .left-col {
+            flex: 1;
+            text-align: center;
+            border-right: 1px solid #f0f0f0;
+            padding-right: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .avatar-circle {
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, #42a5f5 0%, #2196F3 100%);
+            border-radius: 50%;
+            margin-top: -90px; /* Sube el avatar hacia el header */
+            border: 6px solid white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5em;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+
+        .user-details {
+            width: 100%;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .detail-item {
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #555;
+        }
+        
+        .detail-item i { color: var(--primary-blue); width: 20px; text-align: center; }
+        .detail-item strong { color: #333; display: block; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+
+        .btn-pill {
+            background: white;
+            color: #d32f2f;
+            border: 2px solid #ffcdd2;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 25px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-pill:hover {
+            background: #ffebee;
+            border-color: #ef5350;
+            transform: translateY(-2px);
+        }
+
+        .right-col {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e3f2fd;
+            padding-bottom: 10px;
+        }
+
+        .badge-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 20px;
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            resize: none;
+            font-size: 1em;
+            line-height: 1.6;
+            color: #444;
+            transition: border 0.3s;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-blue);
+            outline: none;
+            background: #fbfbfb;
+        }
+
+        /* estilos del modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 35, 126, 0.4); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: white; padding: 35px; border-radius: 16px; width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="header-left">
+            <h3>Sistema de Gestión</h3>
+            <div class="user-badge">
+                <i class="fa-solid fa-user"></i>
+                <span id="welcome-name">...</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="notification-wrapper" onclick="toggleNotifs()">
+                <span class="bell-icon"><i class="fa-solid fa-bell"></i></span>
+                <span id="notif-badge" class="badge">0</span>
+                <div id="notif-list" class="notif-dropdown">
+                    <div style="padding:15px; font-weight:bold; border-bottom:1px solid #eee;">Notificaciones</div>
+                    <div id="notif-items"></div>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:white; cursor:pointer;">
+                Salir <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <a href="perfil.html" class="menu-item active">Mi perfil</a>
+            <a href="panel.html" class="menu-item">Panel general</a>
+            <a href="miscasos.html" class="menu-item">Mis casos</a>
+            <a href="asignaciones.html" class="menu-item">Asignaciones</a>
+            <a href="usability.html" class="menu-item">Usabilidad</a>
+        </div>
+
+        <div class="main-content">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <h2 id="header-title">Bienvenido</h2>
+                </div>
+
+                <div class="profile-body">
+                    <div class="left-col">
+                        <div class="avatar-circle">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        
+                        <h3 id="display-name" style="margin-bottom: 5px; color: #333;">Cargando...</h3>
+                        <span id="display-role-badge" style="background:#eee; color:#555; padding:4px 12px; border-radius:15px; font-size:0.8em; font-weight:600;">...</span>
+                        
+                        <div class="user-details">
+                            <div class="detail-item">
+                                <i class="fa-solid fa-envelope"></i>
+                                <div>
+                                    <strong>Correo Institucional</strong>
+                                    <span id="display-email">...</span>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fa-solid fa-id-badge"></i>
+                                <div>
+                                    <strong>Rol Asignado</strong>
+                                    <span id="display-role" style="text-transform: capitalize;">...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn-pill" onclick="document.getElementById('modal-pass').style.display='flex'">
+                            <i class="fa-solid fa-key"></i> Cambiar Contraseña
+                        </button>
+                    </div>
+
+                    <div class="right-col">
+                        <div class="section-title">
+                            <span><i class="fa-solid fa-align-left"></i> Descripción del Perfil</span>
+                            <span class="badge-info"><i class="fa-solid fa-earth-americas"></i> Público</span>
+                        </div>
+                        
+                        <textarea id="desc-box" placeholder="Cuéntanos sobre ti (Especialidad, semestre, intereses clínicos...)"></textarea>
+                        
+                        <div style="text-align:right; margin-top:20px;">
+                            <button class="btn-primary" onclick="saveProfile()">
+                                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pass" class="modal">
+        <div class="modal-content">
+            <h3 style="color:var(--primary-blue); margin-bottom:15px;">
+                <i class="fa-solid fa-lock"></i> Seguridad
+            </h3>
+            <p style="color:#666; margin-bottom:20px;">Ingresa tu nueva contraseña para actualizarla.</p>
+            
+            <input type="password" id="new-pass" placeholder="Nueva contraseña segura" style="width:100%; padding:12px; border:2px solid #eee; border-radius:8px;">
+            
+            <div style="text-align: right; margin-top: 25px;">
+                <button onclick="document.getElementById('modal-pass').style.display='none'" style="background:transparent; color:#666; border:none; cursor:pointer; margin-right:15px;">Cancelar</button>
+                <button class="btn-primary" onclick="changePassword()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = 'index.html';
+        
+        document.getElementById('welcome-name').innerText = user.name;
+        document.getElementById('header-title').innerText = `Hola, ${user.name.split(' ')[0]}`;
+
+        // logica de notis
+        const socket = io(); 
+        socket.emit('login_user', user.id);
+        socket.on('notification_received', n => { addNotif(n, true); updateBadge(1); });
+        fetch(`/api/notifications/${user.id}`).then(r=>r.json()).then(d=>{ 
+            if(d.filter(n=>n.is_read===0).length) updateBadge(d.filter(n=>n.is_read===0).length, true); 
+            d.forEach(n=>addNotif(n)); 
+        });
+
+        function addNotif(n,p=false){ 
+            const b=document.getElementById('notif-items'); 
+            const h=`<div class="notif-item ${n.is_read===0?'unread':''}">${n.message}</div>`; 
+            if(p)b.insertAdjacentHTML('afterbegin',h); else b.insertAdjacentHTML('beforeend',h); 
+        }
+        function updateBadge(n,s=false){ 
+            const b=document.getElementById('notif-badge'); 
+            let v=s?n:parseInt(b.innerText)+n; 
+            b.innerText=v; b.style.display=v>0?'block':'none'; 
+        }
+        function toggleNotifs(){ 
+            const l=document.getElementById('notif-list'); 
+            l.style.display=l.style.display==='block'?'none':'block'; 
+            if(l.style.display==='block'){ fetch('/api/notifications/mark-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:user.id})}); updateBadge(0,true); }
+        }
+        function logout(){ localStorage.removeItem('user'); window.location.href='index.html'; }
+
+        // logica del perfil
+        fetch(`/api/user-profile/${user.id}`)
+            .then(res => res.json())
+            .then(u => {
+                document.getElementById('display-name').innerText = u.name;
+                document.getElementById('display-email').innerText = u.email;
+                document.getElementById('display-role').innerText = u.role;
+                document.getElementById('display-role-badge').innerText = u.role === 'instructor' ? 'Docente' : 'Alumno';
+                document.getElementById('desc-box').value = u.description || '';
+            });
+
+        async function saveProfile() {
+            const desc = document.getElementById('desc-box').value;
+            await fetch('/api/update-profile', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: user.id, description: desc })
+            });
+            alert('¡Perfil actualizado correctamente!');
+        }
+
+        async function changePassword() {
+            const newPass = document.getElementById('new-pass').value;
+            if(!newPass) return alert("Ingresa una contraseña válida");
+            
+            const res = await fetch('/api/change-password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: user.id, newPassword: newPass })
+            });
+            
+            if((await res.json()).success) {
+                alert("Contraseña actualizada con éxito.");
+                document.getElementById('modal-pass').style.display = 'none';
+            } else {
+                alert("Error al actualizar.");
+            }
+        }
+    </script>
+</body>
+</html>

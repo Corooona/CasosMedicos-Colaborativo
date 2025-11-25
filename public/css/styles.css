@@ -1,0 +1,781 @@
+:root {
+    --primary-blue: #1a237e;
+    --secondary-blue: #283593;
+    --light-blue: #3949ab;
+    --accent-blue: #2196F3;
+    --sky-blue: #42a5f5;
+    --light-bg: #f5f7fa;
+    --sidebar-width: 260px;
+    --gradient-blue: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
+    --gradient-light-blue: linear-gradient(135deg, #42a5f5 0%, #2196F3 100%);
+    --gradient-card: linear-gradient(135deg, #e3f2fd 0%, #f5f9ff 100%);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(33, 150, 243, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(26, 35, 126, 0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* --- HEADER ESTÉTICO CON DEGRADADO AZUL --- */
+.top-bar {
+    background: var(--gradient-blue);
+    color: white;
+    padding: 0 25px;
+    height: 70px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(26, 35, 126, 0.3);
+    z-index: 100;
+    position: relative;
+}
+
+.top-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.5) 50%, 
+        rgba(255,255,255,0) 100%
+    );
+}
+
+.header-left, .header-right { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    position: relative;
+    z-index: 1;
+}
+
+.header-left h3 {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.user-badge {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-size: 0.9em;
+    font-weight: 500;
+    display: flex; 
+    align-items: center; 
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.user-badge:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-2px);
+}
+
+/* --- SIDEBAR CON DEGRADADO SUTIL --- */
+.layout { 
+    display: flex; 
+    flex: 1; 
+    overflow: hidden; 
+    position: relative;
+    z-index: 1;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    padding-top: 15px;
+    box-shadow: 2px 0 15px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.menu-item {
+    padding: 16px 25px;
+    color: #555;
+    text-decoration: none;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.08) 0%, transparent 100%);
+    transition: width 0.3s ease;
+    z-index: -1;
+}
+
+.menu-item:hover {
+    color: var(--primary-blue);
+    transform: translateX(5px);
+}
+
+.menu-item:hover::before {
+    width: 100%;
+}
+
+.menu-item.active {
+    background: linear-gradient(90deg, #e8eaf6 0%, rgba(232, 234, 246, 0.3) 100%);
+    border-left-color: var(--primary-blue);
+    color: var(--primary-blue);
+    font-weight: 600;
+    box-shadow: inset 0 0 10px rgba(26, 35, 126, 0.08);
+}
+
+.menu-item.active::before {
+    width: 100%;
+}
+
+/* --- CONTENIDO PRINCIPAL --- */
+.main-content { 
+    flex: 1; 
+    padding: 30px; 
+    overflow-y: auto; 
+    position: relative; 
+    z-index: 1;
+}
+
+/* --- NOTIFICACIONES CON ESTILO --- */
+.notification-wrapper { 
+    position: relative; 
+    cursor: pointer; 
+}
+
+.bell-icon { 
+    font-size: 1.4em; 
+    color: white; 
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.notification-wrapper:hover .bell-icon {
+    transform: rotate(15deg) scale(1.1);
+}
+
+.badge { 
+    position: absolute; 
+    top: -8px; 
+    right: -8px; 
+    background: linear-gradient(135deg, #e53935 0%, #d32f2f 100%);
+    color: white; 
+    border-radius: 50%; 
+    padding: 3px 6px; 
+    font-size: 0.7em; 
+    display: none; 
+    border: 2px solid white; 
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(229, 57, 53, 0.5);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.notif-dropdown { 
+    display: none; 
+    position: absolute; 
+    top: 50px; 
+    right: -10px; 
+    background: white; 
+    width: 340px; 
+    border-radius: 12px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
+    z-index: 2000; 
+    max-height: 420px; 
+    overflow: hidden;
+    border: 1px solid rgba(33, 150, 243, 0.2);
+}
+
+.notif-dropdown::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-light-blue);
+}
+
+.notif-item { 
+    padding: 14px 18px; 
+    border-bottom: 1px solid #f0f0f0; 
+    font-size: 0.9em; 
+    color: #333; 
+    transition: all 0.2s ease;
+}
+
+.notif-item:hover { 
+    background: linear-gradient(90deg, #fafafa 0%, #e3f2fd 100%);
+    padding-left: 22px;
+}
+
+.notif-item.unread { 
+    background: linear-gradient(90deg, #e3f2fd 0%, #f5f9ff 100%);
+    font-weight: 600; 
+    border-left: 4px solid #2196F3;
+    position: relative;
+}
+
+.notif-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #2196F3;
+    border-radius: 50%;
+}
+
+/* --- CHAT CON DEGRADADOS AZULES --- */
+.chat-section {
+    flex: 1;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.chat-header { 
+    padding: 18px; 
+    background: var(--gradient-blue);
+    color: white;
+    font-weight: 600; 
+    border-bottom: none;
+    box-shadow: 0 2px 10px rgba(26, 35, 126, 0.2);
+}
+
+.chat-messages { 
+    flex: 1; 
+    padding: 20px; 
+    overflow-y: auto; 
+    background: linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%);
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+}
+
+.message { 
+    padding: 12px 16px; 
+    background: linear-gradient(135deg, #e1f5fe 0%, #f0f8ff 100%);
+    border-radius: 12px 12px 12px 4px; 
+    max-width: 75%; 
+    align-self: flex-start;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(33, 150, 243, 0.15);
+}
+
+.message:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.message.mine { 
+    background: var(--gradient-blue);
+    color: white; 
+    align-self: flex-end;
+    border-radius: 12px 12px 4px 12px; 
+    text-align: right;
+    border: none;
+    box-shadow: 0 3px 10px rgba(26, 35, 126, 0.3);
+}
+
+.message small { 
+    display: block; 
+    font-size: 0.75em; 
+    margin-bottom: 4px; 
+    opacity: 0.85;
+    font-weight: 600;
+}
+
+.chat-input-area { 
+    padding: 18px; 
+    border-top: 1px solid #e0e0e0; 
+    display: flex; 
+    gap: 12px; 
+    background: white;
+}
+
+.chat-input-area input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+}
+
+.chat-input-area input:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+/* --- BOTONES CON DEGRADADOS AZULES --- */
+.btn-primary { 
+    background: var(--gradient-blue);
+    color: white; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 8px; 
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(26, 35, 126, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(26, 35, 126, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* --- TARJETAS CON DEGRADADOS AZULES --- */
+.case-card, .grade-card, .reminder-card { 
+    background: white;
+    padding: 24px; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    margin-bottom: 18px; 
+    border: 1px solid #e8eaf6;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.case-card::before,
+.grade-card::before,
+.reminder-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: var(--gradient-light-blue);
+}
+
+.case-card:hover,
+.grade-card:hover,
+.reminder-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(33, 150, 243, 0.2);
+}
+
+.reminder-card::before {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+}
+
+/* --- MODALES CON BACKDROP BLUR --- */
+.modal { 
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(26, 35, 126, 0.4);
+    backdrop-filter: blur(8px);
+    justify-content: center; 
+    align-items: center; 
+    z-index: 3000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content { 
+    background: white; 
+    padding: 30px; 
+    border-radius: 16px; 
+    width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px); 
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0); 
+    }
+}
+
+.modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: var(--gradient-light-blue);
+    border-radius: 16px 16px 0 0;
+}
+
+/* --- INPUTS MEJORADOS --- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="file"],
+select,
+textarea {
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+/* --- SCROLLBAR PERSONALIZADA EN AZUL --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gradient-light-blue);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gradient-blue);
+}
+
+/* --- UTILIDADES --- */
+.text-gradient {
+    background: var(--gradient-light-blue);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* --- CASE LAYOUT (para caso.html) --- */
+.case-layout {
+    display: flex;
+    gap: 25px;
+}
+
+.case-info {
+    flex: 1.5;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e8eaf6;
+}
+
+/* --- FILE ITEMS --- */
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 10px rgba(33, 150, 243, 0.15);
+}
+
+/* --- PROFILE ESPECÍFICO --- */
+.profile-container {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    max-width: 950px;
+    margin: 20px auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid #e8eaf6;
+}
+
+.profile-header {
+    text-align: center;
+    background: var(--gradient-blue);
+    padding: 25px;
+    border-radius: 12px 12px 0 0;
+    margin: -40px -40px 30px -40px;
+    color: white;
+}
+
+.profile-header h2 {
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.profile-body {
+    display: flex;
+    gap: 40px;
+}
+
+.left-col {
+    flex: 1;
+    text-align: center;
+    border-right: 1px solid #eee;
+    padding-right: 20px;
+}
+
+.right-col {
+    flex: 1.5;
+}
+
+.avatar-circle {
+    width: 130px;
+    height: 130px;
+    background: var(--gradient-light-blue);
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3.2em;
+    color: white;
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+    border: 5px solid white;
+}
+
+.btn-pill {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1a237e;
+    border: 2px solid #2196F3;
+    padding: 10px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.btn-pill:hover {
+    background: var(--gradient-blue);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(26, 35, 126, 0.3);
+}
+
+/* --- LOGIN CARD EN AZUL --- */
+.login-card {
+    background: var(--gradient-blue);
+    padding: 50px;
+    border-radius: 16px;
+    color: white;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(26, 35, 126, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.login-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.login-card h2 {
+    margin-bottom: 10px;
+    font-size: 2em;
+    position: relative;
+    z-index: 1;
+}
+
+.login-card p {
+    position: relative;
+    z-index: 1;
+}
+
+.login-card input,
+.login-card select {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    padding: 14px;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+/* --- DATE BOX --- */
+.date-box {
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+    padding: 15px;
+    border-radius: 8px;
+    min-width: 90px;
+    border: 2px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* --- STUDENT ITEM --- */
+.student-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+}
+
+.student-item:hover {
+    background: linear-gradient(90deg, transparent 0%, rgba(33, 150, 243, 0.05) 100%);
+    padding-left: 18px;
+}
+
+/* --- USER CLICK --- */
+.user-click {
+    cursor: pointer;
+    text-decoration: none;
+    color: #2196F3;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.user-click:hover {
+    color: #1a237e;
+}
+
+.user-click::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--gradient-light-blue);
+    transition: width 0.3s ease;
+}
+
+.user-click:hover::after {
+    width: 100%;
+}

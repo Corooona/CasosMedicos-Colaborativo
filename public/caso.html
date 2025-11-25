@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Caso Clínico</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://kit.fontawesome.com/2f6e11ae93.js" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+            
+        /* Layout Principal */
+        .case-layout {
+            display: flex;
+            gap: 25px;
+            height: calc(100vh - 130px); /* Ajuste para que ocupe pantalla completa */
+        }
+
+        /* Columna Izquierda: Info Clínica */
+        .case-info {
+            flex: 1.6;
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            border: 1px solid #f0f0f0;
+        }
+
+        .case-header-title {
+            color: var(--primary-blue);
+            font-size: 2em;
+            margin-bottom: 10px;
+            border-bottom: 3px solid var(--accent-blue); /* Línea de acento */
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .meta-data {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid var(--accent-blue);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95em;
+            color: #555;
+        }
+
+        .meta-item i { color: var(--primary-blue); font-size: 1.2em; }
+
+        .clinical-desc {
+            font-size: 1.05em;
+            line-height: 1.6;
+            color: #444;
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+        }
+
+        /* Sección de Archivos */
+        .files-section h4 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px dashed #90caf9;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .file-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: var(--accent-blue);
+        }
+
+        .file-info { display: flex; align-items: center; gap: 15px; }
+        .file-icon { font-size: 1.8em; color: #e53935; } /* Color PDF */
+        .file-name { font-weight: 600; color: #333; text-decoration: none; }
+        .file-name:hover { color: var(--primary-blue); text-decoration: underline; }
+
+        /* Columna Derecha: Chat */
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #f0f0f0;
+        }
+
+        /* Modales */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 3000; backdrop-filter: blur(5px); }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="header-left">
+            <h3>Sistema de Gestión</h3>
+            <div class="user-badge">
+                <i class="fa-solid fa-user"></i>
+                <span id="welcome-name">Cargando...</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="notification-wrapper" onclick="toggleNotifs()">
+                <span class="bell-icon"><i class="fa-solid fa-bell"></i></span>
+                <span id="notif-badge" class="badge">0</span>
+                <div id="notif-list" class="notif-dropdown">
+                    <div style="padding:15px; font-weight:bold; border-bottom:1px solid #eee;">Notificaciones</div>
+                    <div id="notif-items"></div>
+                </div>
+            </div>
+            <button onclick="logout()" style="background:none; border:none; color:white; cursor:pointer;">
+                Salir <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="sidebar">
+            <a href="miscasos.html" class="menu-item" style="color:#d32f2f; font-weight:bold;">
+                <i class="fa-solid fa-arrow-left"></i> Volver a Mis Casos
+            </a>
+            <div class="menu-item active">
+                <i class="fa-solid fa-file-medical"></i> Detalles del Caso
+            </div>
+            </div>
+
+        <div class="main-content">
+            <div class="case-layout">
+                
+                <div class="case-info">
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <h2 id="case-title" class="case-header-title">Cargando...</h2>
+                        
+                        <div id="instructor-tools" style="display:none;">
+                            <button class="btn-primary" onclick="document.getElementById('modal-edit').style.display='flex'">
+                                <i class="fa-solid fa-pen"></i> Editar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="meta-data">
+                        <div class="meta-item">
+                            <i class="fa-regular fa-calendar-check"></i>
+                            <div>
+                                <small>Fecha Entrega</small><br>
+                                <strong id="case-date">-</strong>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fa-solid fa-hospital-user"></i>
+                            <div>
+                                <small>Paciente</small><br>
+                                <strong><span id="case-age">-</span> | <span id="case-gender">-</span></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-bottom:10px; color:#333;"><i class="fa-solid fa-stethoscope"></i> Motivo de Consulta</h3>
+                    <div id="case-desc" class="clinical-desc">...</div>
+
+                    <div class="files-section">
+                        <h4><i class="fa-solid fa-folder-open"></i> Archivos y Estudios</h4>
+                        
+                        <div class="upload-box">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size:1.5em; color:#1976d2;"></i>
+                            <input type="file" id="new-file" style="border:none; background:transparent;">
+                            <button class="btn-primary" style="padding:8px 15px;" onclick="uploadFile()">Subir</button>
+                        </div>
+
+                        <div id="file-list"></div>
+                    </div>
+                </div>
+
+                <div class="chat-section">
+                    <div class="chat-header">
+                        <i class="fa-regular fa-comments"></i> Chat de Equipo
+                    </div>
+                    <div class="chat-messages" id="chat-box"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="msg-input" placeholder="Escribe un mensaje...">
+                        <button class="btn-primary" onclick="sendMessage()">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-profile" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <div class="avatar-circle" style="width:80px; height:80px; font-size:2em; margin:0 auto 10px;">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <h3 id="p-name" style="margin:0;"></h3>
+            <span id="p-role" style="background:#e3f2fd; color:#1565c0; padding:2px 8px; border-radius:10px; font-size:0.8em;"></span>
+            <p id="p-desc" style="margin-top:15px; color:#555; font-style:italic;"></p>
+            <button class="btn-primary" style="margin-top:20px;" onclick="this.parentElement.parentElement.style.display='none'">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="modal-edit" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:15px;">Editar Información</h3>
+            <label>Título:</label><input type="text" id="e-title">
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="flex:1"><label>Edad:</label><input type="text" id="e-age"></div>
+                <div style="flex:1"><label>Sexo:</label><select id="e-gender"><option>Femenino</option><option>Masculino</option></select></div>
+            </div>
+            <label style="margin-top:10px;">Fecha:</label><input type="date" id="e-date">
+            <label style="margin-top:10px;">Descripción:</label><textarea id="e-desc" rows="4"></textarea>
+            <div style="text-align:right; margin-top:20px;">
+                <button class="btn-primary" style="background:#ccc; margin-right:10px;" onclick="document.getElementById('modal-edit').style.display='none'">Cancelar</button>
+                <button class="btn-primary" onclick="submitEdit()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) window.location.href = 'index.html';
+        document.getElementById('welcome-name').innerText = user.name;
+        
+        const socket = io();
+        const caseId = new URLSearchParams(window.location.search).get('id');
+
+        // notis
+        socket.emit('login_user', user.id);
+        socket.on('notification_received', n => { addNotif(n, true); updateBadge(1); });
+        fetch(`/api/notifications/${user.id}`).then(r=>r.json()).then(d=>{ 
+            if(d.filter(n=>n.is_read===0).length) updateBadge(d.filter(n=>n.is_read===0).length, true);
+            d.forEach(n=>addNotif(n));
+        });
+
+        function addNotif(n,p=false){ 
+            const b=document.getElementById('notif-items'); 
+            const h=`<div class="notif-item ${n.is_read===0?'unread':''}">${n.message}<br><small style="color:#888">${n.timestamp}</small></div>`; 
+            if(p)b.insertAdjacentHTML('afterbegin',h); else b.insertAdjacentHTML('beforeend',h); 
+        }
+        function updateBadge(n,s=false){ 
+            const b=document.getElementById('notif-badge'); 
+            let v=s?n:parseInt(b.innerText)+n; 
+            b.innerText=v; b.style.display=v>0?'block':'none'; 
+        }
+        function toggleNotifs(){ 
+            const l=document.getElementById('notif-list'); 
+            l.style.display=l.style.display==='block'?'none':'block'; 
+            if(l.style.display==='block'){ fetch('/api/notifications/mark-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:user.id})}); updateBadge(0,true); }
+        }
+        function logout(){ localStorage.removeItem('user'); window.location.href='index.html'; }
+
+        // caso
+        if(user.role === 'instructor') document.getElementById('instructor-tools').style.display = 'block';
+        
+        function loadDetails() {
+            fetch(`/api/case-details/${caseId}`).then(r=>r.json()).then(d=>{
+                document.getElementById('case-title').innerText=d.title;
+                document.getElementById('case-date').innerText=d.event_date || 'Sin fecha';
+                document.getElementById('case-age').innerText=d.age;
+                document.getElementById('case-gender').innerText=d.gender;
+                document.getElementById('case-desc').innerText=d.description;
+                
+                // Prellenar Edit
+                document.getElementById('e-title').value=d.title;
+                document.getElementById('e-date').value=d.event_date;
+                document.getElementById('e-age').value=d.age;
+                document.getElementById('e-gender').value=d.gender; // Fix: asignar valor al select
+                document.getElementById('e-desc').value=d.description;
+            });
+        }
+
+        function loadFiles() {
+            fetch(`/api/case-files/${caseId}`).then(r=>r.json()).then(files=>{
+                const l=document.getElementById('file-list'); l.innerHTML='';
+                if(files.length === 0) l.innerHTML = '<p style="color:#777; font-style:italic;">No hay archivos compartidos aún.</p>';
+                
+                files.forEach(f=>{
+                    const canDel = (user.role==='instructor')||(parseInt(f.uploader_id)===user.id);
+                    l.innerHTML += `
+                        <div class="file-card">
+                            <div class="file-info">
+                                <i class="fa-solid fa-file-pdf file-icon"></i>
+                                <div>
+                                    <a href="/uploads/${f.filename}" target="_blank" class="file-name">${f.original_name}</a>
+                                    <div style="font-size:0.8em; color:#666;">Subido por: <b>${f.uploader_name}</b></div>
+                                </div>
+                            </div>
+                            ${canDel ? `<button class="btn-delete" onclick="deleteFile(${f.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    `;
+                });
+            });
+        }
+        loadDetails(); loadFiles();
+
+        // --- SOCKETS ---
+        socket.emit('join_case', caseId);
+        socket.on('file_uploaded', loadFiles);
+        socket.on('case_updated', loadDetails);
+        
+        fetch(`/api/messages/${caseId}`).then(r=>r.json()).then(ms=>ms.forEach(addMsg));
+        socket.on('new_message', addMsg);
+
+        function sendMessage(){ const i=document.getElementById('msg-input'); if(i.value){ socket.emit('send_message', {caseId, user:user.name, userId:user.id, text:i.value}); i.value=''; } }
+        
+        function addMsg(d){
+            const b=document.getElementById('chat-box'); const mine=d.user===user.name;
+            b.innerHTML+=`
+                <div class="message ${mine?'mine':''}">
+                    <small class="user-click" onclick="showProfile(${d.user_id})">${d.user_name}</small>
+                    ${d.content}
+                </div>`;
+            b.scrollTop=b.scrollHeight;
+        }
+
+        // --- ACCIONES ---
+        async function uploadFile(){ 
+            const f=document.getElementById('new-file').files[0]; if(!f)return; 
+            const fd=new FormData(); fd.append('file',f); fd.append('caseId',caseId); fd.append('uploaderName',user.name); fd.append('uploaderId',user.id); 
+            await fetch('/api/upload-file',{method:'POST',body:fd}); document.getElementById('new-file').value=''; 
+        }
+        async function deleteFile(fid){ if(confirm('¿Eliminar archivo?')) await fetch('/api/delete-file',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:fid, userId:user.id, userRole:user.role})}); }
+        
+        async function submitEdit(){ 
+            const b={id:caseId, title:document.getElementById('e-title').value, age:document.getElementById('e-age').value, gender:document.getElementById('e-gender').value, eventDate:document.getElementById('e-date').value, description:document.getElementById('e-desc').value}; 
+            await fetch('/api/edit-case',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}); 
+            document.getElementById('modal-edit').style.display='none'; 
+        }
+        
+        async function showProfile(uid){ 
+            const r=await fetch(`/api/user-profile/${uid}`); const d=await r.json(); 
+            document.getElementById('p-name').innerText=d.name; 
+            document.getElementById('p-role').innerText=d.role.toUpperCase(); 
+            document.getElementById('p-desc').innerText=d.description || "Sin descripción."; 
+            document.getElementById('modal-profile').style.display='flex'; 
+        }
+    </script>
+</body>
+</html>

@@ -149,4 +149,9 @@ io.on('connection', (socket) => {
     socket.on('send_message', (d) => { /*...*/ const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); db.run("INSERT INTO messages (case_id, user_name, user_id, content, timestamp) VALUES (?,?,?,?,?)", [d.caseId, d.user, d.userId, d.text, time]); io.to(d.caseId).emit('new_message', { ...d, timestamp: time }); });
 });
 
-http.listen(3000, () => console.log('CORRIENDO EN http://localhost:3000'));
+// http.listen(3000, () => console.log('CORRIENDO EN http://localhost:3000'));
+
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => {
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
